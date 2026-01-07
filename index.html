@@ -144,18 +144,25 @@ async function unlock() {
       return;
     }
 
-    // ✅ Read current views safely
-const currentViews = Number(data.views?.count || 0);
+  // ================= VIEW COUNTER DEBUG =================
+console.log("Firebase data:", data);
 
-// ✅ Increment view count (cache-safe)
-await fetch(
+const currentViews = Number(data.views?.count || 0);
+console.log("Current views:", currentViews);
+
+const newViews = currentViews + 1;
+console.log("New views:", newViews);
+
+const response = await fetch(
   FIREBASE_URL + "/views/count.json?ts=" + Date.now(),
   {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(currentViews + 1)
+    body: JSON.stringify(newViews)
   }
 );
+
+console.log("View update response status:", response.status);
 
 
     // Decrypt message
