@@ -144,12 +144,19 @@ async function unlock() {
       return;
     }
 
-    // Increment views safely
-    const views = data.views?.count || 0;
-    await fetch(FIREBASE_URL + "/views/count.json", {
-      method: "PUT",
-      body: JSON.stringify(views + 1)
-    });
+    // ✅ Read current views safely
+const currentViews = Number(data.views?.count || 0);
+
+// ✅ Increment view count (cache-safe)
+await fetch(
+  FIREBASE_URL + "/views/count.json?ts=" + Date.now(),
+  {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(currentViews + 1)
+  }
+);
+
 
     // Decrypt message
     const decrypted = CryptoJS.AES.decrypt(
