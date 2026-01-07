@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Private Message</title>
+  <meta charset="UTF-8">
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      background-image: url("./background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #ffffff;
+      overflow-x: hidden;
+    }
+
+    /* Soft dark overlay so text is readable */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      z-index: -1;
+    }
+
+    .card {
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(14px);
+      border-radius: 20px;
+      padding: 40px 45px;
+      width: 90%;
+      max-width: 850px;
+      text-align: center;
+      box-shadow: 0 15px 50px rgba(0,0,0,0.6);
+    }
+
+    h2 {
+      font-weight: 400;
+      letter-spacing: 0.6px;
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 85%;
+      max-width: 340px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 12px 32px;
+      border-radius: 8px;
+      border: none;
+      font-size: 15px;
+      cursor: pointer;
+      background: #ffffff;
+      color: #222;
+      transition: 0.3s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      background: #f0f0f0;
+    }
+
+    #status {
+      margin-top: 15px;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    #message {
+      margin-top: 30px;
+      white-space: pre-wrap;
+      text-align: left;
+      line-height: 1.7;
+      font-size: 16px;
+      opacity: 0;
+      animation: fadeIn 1.5s forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 600px) {
+      .card {
+        padding: 28px 25px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="card">
+    <h2>Sneha, my gomluu , i know , i know .. yeah have patience just a message(maybe not)</h2>
+
+    <input type="password" id="password" placeholder="Enter password" />
+    <br>
+    <button onclick="unlock()">Unlock</button>
+
+    <div id="status"></div>
+    <div id="message"></div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
+
+<script>
+const FIREBASE_URL = "https://sneha-e034a-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+async function unlock() {
+  const inputPassword = document.getElementById("password").value;
+  const status = document.getElementById("status");
+  const messageBox = document.getElementById("message");
+
+  if (!inputPassword) {
+    status.innerText = "Please enter the password.";
+    return;
+  }
+
+  try {
+    const res = await fetch(FIREBASE_URL + "/.json");
+    const data = await res.json();
+
+    if (!data || !data.passwordHash || !data.encryptedMessage) {
+      status.innerText = "Database error.";
+      return;
+    }
+
+    // Hash password
+    const hash = CryptoJS.SHA256(inputPassword).toString();
+
+    if (hash !== data.passwordHash) {
+      status.innerText = "Incorrect password.";
+      return;
+    }
+
+    // Increment views safely
+    const views = data.views?.count || 0;
+    await fetch(FIREBASE_URL + "/views/count.json", {
+      method: "PUT",
+      body: JSON.stringify(views + 1)
+    });
+
+    // Decrypt message
+    const decrypted = CryptoJS.AES.decrypt(
+      data.encryptedMessage,
+      inputPassword
+    ).toString(CryptoJS.enc.Utf8);
+
+    if (!decrypted) {
+      status.innerText = "Decryption failed.";
+      return;
+    }
+
+    messageBox.innerText = decrypted;
+    messageBox.style.opacity = 1;
+    status.innerText = "Unlocked.";
+
+  } catch (err) {
+    console.error(err);
+    status.innerText = "Connection error.";
+  }
+}
+</script>
+
+</body>
+</html>
