@@ -129,7 +129,7 @@ async function unlock() {
   }
 
   try {
-    const res = await fetch(FIREBASE_URL + "/.json");
+    const res = await fetch(FIREBASE_URL + "/.json?ts=" + Date.now());
     const data = await res.json();
 
     if (!data || !data.passwordHash || !data.encryptedMessage) {
